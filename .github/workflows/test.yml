@@ -10,8 +10,11 @@ permissions:
 jobs:
   test-kv:
     runs-on: ubuntu-latest
+    environment: dev
     env:
-      KV: ${{ secrets.KEYVAULT_NAME }}
+      WORKDIR: "environments/dev"
+      TF_INPUT: "false"              # Forhindrer interactive input
+      TF_IN_AUTOMATION: "true"       # Terraform automation mode
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
