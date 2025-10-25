@@ -1,10 +1,8 @@
 name: Test Key Vault Access
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'environments/dev/**'  # Kun trigger ved endringer i prosjekt
+  workflow_dispatch: {}  # Manuell trigger fra GitHub
+  branches: [ main ]
 
 permissions:
   id-token: write
