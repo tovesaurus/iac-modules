@@ -45,6 +45,19 @@ jobs:
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}"
         } >> "$GITHUB_ENV"
 
+    - name: Load vars from Key Vault → TF_VAR_*
+      env:
+        KV: ${{ secrets.KEYVAULT_NAME }}
+      run: |
+        set -euo pipefail
+        ENVIRONMENT=$(az keyvault secret show --vault-name "$KV" --name envirodev --query value -o tsv)
+        SUFFIX=$(az keyvault secret show --vault-name "$KV" --name suffix --query value -o tsv)
+
+        {
+          echo "TF_VAR_rg_name=$ENVIRONMENT"
+          echo "TF_VAR_location=$SUFFIX"
+        } >> "$GITHUB_ENV"
+
     - name: Terraform Init
       working-directory: "${{ env.WORKDIR }}"
       run: |
@@ -58,7 +71,6 @@ jobs:
       working-directory: "${{ env.WORKDIR }}"
       run: |
         terraform plan \
-          -var-file="dev.tfvars" \
           -input=false \
           -out=tfplan \
           -no-color
