@@ -1,63 +1,52 @@
 name: Test Key Vault Access
 
 on:
-  workflow_dispatch: {}  # Manuell trigger fra GitHub
+  workflow_dispatch: {}  # Manuell trigger
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  deploy-dev:
+  test-kv:
     runs-on: ubuntu-latest
-    environment: dev
     env:
-      WORKDIR: "environments/dev"
-      TF_INPUT: "false"              # Forhindrer interactive input
-      TF_IN_AUTOMATION: "true"       # Terraform automation mode
-    
+      KV: ${{ secrets.KEYVAULT_NAME }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.13.3
-        terraform_wrapper: false     # Bedre output
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.3
+          terraform_wrapper: false
 
-    - name: Azure Login med Federated Credentials
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Azure Login med Federated Credentials
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Export ARM_* for Terraform (OIDC)
-      run: |
-        {
-          echo "ARM_USE_OIDC=true"
-          echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}"
-          echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}"
-          echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-        } >> "$GITHUB_ENV"
+      - name: Export ARM_* for Terraform (OIDC)
+        run: |
+          {
+            echo "ARM_USE_OIDC=true"
+            echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}"
+            echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}"
+            echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          } >> "$GITHUB_ENV"
 
-    - name: Load vars from Key Vault → TF_VAR_*
-      env:
-        KV: ${{ secrets.KEYVAULT_NAME }}
-      run: |
-        set -euo pipefail
-        ENVIRONMENT=$(az keyvault secret show --vault-name "$KV" --name envirodev --query value -o tsv)
-        SUFFIX=$(az keyvault secret show --vault-name "$KV" --name suffix --query value -o tsv)
+      - name: Load vars from Key Vault → TF_VAR_*
+        run: |
+          set -euo pipefail
+          ENVIRONMENT=$(az keyvault secret show --vault-name "$KV" --name envirodev --query value -o tsv)
+          SUFFIX=$(az keyvault secret show --vault-name "$KV" --name suffix --query value -o tsv)
+          echo "TF_VAR_environment=$ENVIRONMENT" >> "$GITHUB_ENV"
+          echo "TF_VAR_suffix=$SUFFIX" >> "$GITHUB_ENV"
 
-        {
-          echo "TF_VAR_environment=$ENVIRONMENT"
-          
-          echo "TF_VAR_suffix=$SUFFIX"
-        } >> "$GITHUB_ENV"
-        - name: Debug TF_VAR
-        
-    - name: Debug TF_VAR value
-      run: |
-       echo "TF_VAR_environment=$TF_VAR_environment"
-       echo "TF_VAR_suffix=$TF_VAR_suffix"
+      - name: Debug TF_VAR values
+        run: |
+          echo "TF_VAR_environment=$TF_VAR_environment"
+          echo "TF_VAR_suffix=$TF_VAR_suffix"
