@@ -54,14 +54,14 @@ jobs:
         SUFFIX=$(az keyvault secret show --vault-name "$KV" --name suffix --query value -o tsv)
 
         {
-          echo "TF_VAR_rg_name=$ENVIRONMENT"
-          echo "TF_VAR_location=$SUFFIX"
+          echo "TF_VAR_environment=$ENVIRONMENT"
+          echo "TF_VAR_suffix=$SUFFIX"
         } >> "$GITHUB_ENV"
 
     - name: Terraform Init
       working-directory: "${{ env.WORKDIR }}"
       run: |
-        terraform init \
+        terraform init -input=false \
           -backend-config="../../shared/backend.hcl" \
           -backend-config="key=projects/webapp/dev/dev.tfstate" \
           -input=false \
