@@ -48,5 +48,4 @@ resource "azurerm_linux_web_app" "app" {
   app_settings = var.app_settings
 }
 
-# Change to push workflow
 # test
