@@ -48,5 +48,4 @@ resource "azurerm_linux_web_app" "app" {
   app_settings = var.app_settings
 }
 
-# siste test med cleanup timer i workflow
 # Change to push workflow
