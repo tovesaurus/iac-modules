@@ -1,40 +1,59 @@
 name: Test Key Vault Access
 
 on:
-  workflow_dispatch: {}  # Manuell trigger fra GitHub
+  push:
+    branches: [ main ]
+    paths:
+      - 'environments/dev/**'  # Kun trigger ved endringer i prosjekt
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  test-kv:
+  deploy-dev:
     runs-on: ubuntu-latest
+    environment: dev
     env:
-      KV: ${{ secrets.KEYVAULT_NAME }}
+      WORKDIR: "environments/dev"
+      TF_INPUT: "false"              # Forhindrer interactive input
+      TF_IN_AUTOMATION: "true"       # Terraform automation mode
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Azure Login med Federated Credentials
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.13.3
+        terraform_wrapper: false     # Bedre output
 
-      - name: Export ARM_* for Terraform (OIDC)
-        run: |
-          {
-            echo "ARM_USE_OIDC=true"
-            echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}"
-            echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}"
-            echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-          } >> "$GITHUB_ENV"
+    - name: Azure Login med Federated Credentials
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Test Key Vault access
-        run: |
-          echo "Henter envirodev..."
-          az keyvault secret show --vault-name "$KV" --name envirodev
-          echo "Henter suffix..."
-          az keyvault secret show --vault-name "$KV" --name suffix
+    - name: Export ARM_* for Terraform (OIDC)
+      run: |
+        {
+          echo "ARM_USE_OIDC=true"
+          echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}"
+          echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}"
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+        } >> "$GITHUB_ENV"
+
+    - name: Load vars from Key Vault → TF_VAR_*
+      env:
+        KV: ${{ secrets.KEYVAULT_NAME }}
+      run: |
+        set -euo pipefail
+        ENVIRONMENT=$(az keyvault secret show --vault-name "$KV" --name envirodev --query value -o tsv)
+        SUFFIX=$(az keyvault secret show --vault-name "$KV" --name suffix --query value -o tsv)
+
+        {
+          echo "TF_VAR_environment=$ENVIRONMENT"
+          echo "TF_VAR_suffix=$SUFFIX"
+        } >> "$GITHUB_ENV"
