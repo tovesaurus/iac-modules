@@ -26,10 +26,12 @@ variable "tags" {
 variable "suffix" { 
   description = "Suffix for resource names"
   type        = string
-  default     = "tj41"
+  default     = ""
+
 }
 variable "environment" {
   description = "Deployment environment (e.g., dev, prod)"
   type        = string
-  default     = "dev"
+  default     = ""
+
 }
