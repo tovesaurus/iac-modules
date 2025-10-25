@@ -55,3 +55,7 @@ jobs:
           
           echo "TF_VAR_suffix=$SUFFIX"
         } >> "$GITHUB_ENV"
+        - name: Debug TF_VAR
+    run: |
+     echo "TF_VAR_environment=$TF_VAR_environment"
+     echo "TF_VAR_suffix=$TF_VAR_suffix"
