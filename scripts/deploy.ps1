@@ -33,6 +33,29 @@ Write-Host ""
 
 Set-Location "$WORKSPACE/terraform"
 
+# Get Azure subscription
+Write-Host "🔍 Getting Azure subscription ID..." -ForegroundColor Yellow
+
+try {
+    $subscriptionId = az account show --query id -o tsv 2>$null
+    
+    if ([string]::IsNullOrEmpty($subscriptionId) -or $LASTEXITCODE -ne 0) {
+        Write-Host "❌ Error: Could not get subscription ID. Please run 'az login' first." -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "✅ Using subscription: $subscriptionId" -ForegroundColor Green
+    Write-Host ""
+    
+} catch {
+    Write-Host "❌ Error: Azure CLI not available or not logged in." -ForegroundColor Red
+    Write-Host "   Please install Azure CLI and run 'az login'" -ForegroundColor Gray
+    exit 1
+}
+
+# Export as environment variable for Terraform
+$env:ARM_SUBSCRIPTION_ID = $subscriptionId
+
 # Initialize with backend
 Write-Host "2️⃣ Initializing Terraform..." -ForegroundColor Yellow
 terraform init -backend-config="../backend-configs/backend-$Environment.tfvars"

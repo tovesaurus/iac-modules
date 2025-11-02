@@ -1,7 +1,7 @@
 variable "environment" {
   description = "Environment name (dev, test, prod)"
   type        = string
-  
+
   validation {
     condition     = contains(["dev", "test", "prod"], var.environment)
     error_message = "Environment must be dev, test, or prod."
@@ -36,14 +36,14 @@ variable "storage_account_name" {
   description = "Name of the storage account"
   type        = string
   default     = "sttj42demo"
-  
+
 }
 
 variable "account_tier" {
   description = "The tier of the storage account"
   type        = string
   default     = "Standard"
-  
+
 }
 variable "account_replication_type" {
   description = "The replication type of the storage account"

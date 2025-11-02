@@ -22,11 +22,11 @@ resource "azurerm_storage_account" "main" {
   name                = local.storage_account_name
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  
+
   account_tier             = var.account_tier
   account_replication_type = var.account_replication_type
-  
-  min_tls_version           = "TLS1_2"
+
+  min_tls_version = "TLS1_2"
 
   tags = {
     Environment = var.environment
@@ -37,6 +37,6 @@ resource "azurerm_storage_account" "main" {
 # Storage Container
 resource "azurerm_storage_container" "demo" {
   name                  = local.container_name
-  storage_account_id   = azurerm_storage_account.main.id
+  storage_account_id    = azurerm_storage_account.main.id
   container_access_type = "private"
 }
